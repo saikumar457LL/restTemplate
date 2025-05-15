@@ -1,6 +1,7 @@
 package org.ocean.resttemplate;
 
 import lombok.extern.slf4j.Slf4j;
+import org.ocean.resttemplate.config.RestTemplateErrorHandler;
 import org.ocean.resttemplate.config.RestTemplateInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationRunner;
@@ -25,6 +26,9 @@ public class RestTemplateApplication {
 
     @Autowired
     private RestTemplate restTemplate;
+
+    @Autowired
+    private RestTemplateErrorHandler restTemplateErrorHandler;
 
     public RestTemplateApplication(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
@@ -64,8 +68,6 @@ public class RestTemplateApplication {
             log.info("Received 200 OK with response: " + response.getBody());
             return ResponseEntity.ok(response.getBody());
         } else {
-            // throws error on start-up
-            // will not reach
             log.error("Received 4xx Client Error: " + response.getBody());
             return ResponseEntity.ok(response.getBody());
         }
@@ -89,8 +91,6 @@ public class RestTemplateApplication {
             log.info("Received 200 OK with response: " + response.getBody());
             return ResponseEntity.ok(response.getBody());
         } else {
-            // throws error on start-up
-            // will not reach
             log.error("Received 4xx Client Error: " + response.getBody());
             return ResponseEntity.ok(response.getBody());
         }
@@ -108,10 +108,31 @@ public class RestTemplateApplication {
             log.info("Received 200 OK with response: " + response.getBody());
             return ResponseEntity.ok(response.getBody());
         }
-        // may not reach
         log.error("Received 4xx Client Error: " + response.getBody());
         return ResponseEntity.ok(response.getBody());
 
+    }
+
+    /**
+     * assume service is down
+     * @param restTemplateInfo
+     * @return
+     */
+    @GetMapping("/error")
+    public ResponseEntity<String> getd(@RequestBody RestTemplateInfo restTemplateInfo) {
+
+        RestTemplate restTemplate = new RestTemplate();
+        // restTemplate error handler
+        restTemplate.setErrorHandler(restTemplateErrorHandler);
+        // get
+        ResponseEntity<String> response = restTemplate.getForEntity(restTemplateInfo.getUrl(), String.class);
+        if (response.getStatusCode().is2xxSuccessful()) {
+            log.info("Received 200 OK with response: " + response.getBody());
+            return ResponseEntity.ok(response.getBody());
+        } else {
+            log.error("Received 4xx Client Error: " + response.getBody());
+            return ResponseEntity.ok(response.getBody());
+        }
     }
 
 }
